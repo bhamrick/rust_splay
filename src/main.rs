@@ -1,4 +1,7 @@
 use std::cmp::Ordering;
+use std::error::Error;
+use std::fs::File;
+use std::io::*;
 use std::mem;
 
 #[derive(Debug)]
@@ -781,29 +784,66 @@ impl BitRange {
 }
 
 fn main() {
-    /*
-    let mut tree : SplayTree<u8> = Splay::new();
-    tree.insert(1);
-    tree.insert(2);
-    tree.insert(3);
-    tree.insert(4);
-    tree.insert(5);
-    tree.insert(6);
-    tree.insert(7);
-    tree.insert(8);
-    println!("{:?}", tree);
-    println!("{:?}", tree.contains(0));
-    println!("{:?}", tree);
-    println!("{:?}", tree.contains(4));
-    println!("{:?}", tree);
-    */
+    let fin = match File::open("range_reverse.in") {
+        Err(why) => panic!("Could not open input file: {}", why.description()),
+        Ok(file) => file,
+    };
+    let mut fin = BufReader::new(fin);
+    let fout = match File::create("range_reverse.out") {
+        Err(why) => panic!("Could not open output file: {}", why.description()),
+        Ok(file) => file,
+    };
+    let mut fout = BufWriter::new(fout);
 
-    let mut range = BitRange::new(10);
-    range.set(1, true);
-    range.set(3, true);
-    println!("{:?}", range);
-    range.reverse_range(1, 7);
-    println!("{:?}", range);
-    println!("{:?}", range.get(5));
-    println!("{:?}", range);
+    let mut line1 = String::new();
+    match fin.read_line(&mut line1) {
+        Err(why) => panic!("Error reading data: {}", why.description()),
+        Ok(_) => {},
+    };
+    let line1_tokens : Vec<&str> = line1.trim_right().split(' ').collect();
+    let n = match line1_tokens[0].parse::<i32>() {
+        Err(why) => panic!("Error parsing data: {}", why.description()),
+        Ok(n) => n,
+    };
+    let m = match line1_tokens[1].parse::<i32>() {
+        Err(why) => panic!("Error parsing data: {}", why.description()),
+        Ok(n) => n,
+    };
+    let mut range = BitRange::new(n);
+    for _ in 0..m {
+        let mut line = String::new();
+        match fin.read_line(&mut line) {
+            Err(why) => panic!("Error reading data: {}", why.description()),
+            Ok(_) => {},
+        };
+        let tokens : Vec<&str> = line.trim_right().split(' ').collect();
+        if tokens[0] == "S" {
+            let idx = match tokens[1].parse::<i32>() {
+                Err(why) => panic!("Error parsing data: {}", why.description()),
+                Ok(n) => n,
+            };
+            let val = tokens[2] == "1";
+            range.set(idx, val);
+        } else if tokens[0] == "G" {
+            let idx = match tokens[1].parse::<i32>() {
+                Err(why) => panic!("Error parsing data: {}", why.description()),
+                Ok(n) => n,
+            };
+            let val = match range.get(idx) {
+                None => panic!("Requested index out of range!"),
+                Some(b) => b,
+            };
+            write!(fout, "{}\n", if val { 1 } else { 0 }).unwrap();
+        } else if tokens[0] == "R" {
+            let idx1 = match tokens[1].parse::<i32>() {
+                Err(why) => panic!("Error parsing data: {}", why.description()),
+                Ok(n) => n,
+            };
+            let idx2 = match tokens[2].parse::<i32>() {
+                Err(why) => panic!("Error parsing data: {}", why.description()),
+                Ok(n) => n,
+            };
+            range.reverse_range(idx1, idx2);
+        }
+    }
 }
